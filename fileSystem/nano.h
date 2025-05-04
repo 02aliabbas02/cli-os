@@ -58,23 +58,24 @@ int line=1;
             editedContent.insert(cursorPosition, "\n");  
             cursorPosition++;
             line++;
-           
-            clearLines();
-            cout << editedContent;  
+           cout << "\n";  // Move to the next line
+            cout << editedContent.substr(cursorPosition);  
+         //   clearLines();
+            //cout << editedContent;  
         } else if (ch == 127) {  // Backspace key
             if (cursorPosition > 0) {
                 editedContent.erase(cursorPosition - 1, 1);  
                 cursorPosition--;
-                
-                clearLines();
-                cout << editedContent; 
+                cout << "\b \b";
+                // clearLines();
+                // cout << editedContent; 
             }
         } else {  
             editedContent.insert(cursorPosition, 1, ch);  
             cursorPosition++; 
-             
-            clearLines();
-            cout << editedContent;  // Reprint the edited content
+              cout << ch; 
+            // clearLines();
+            // cout << editedContent;  // Reprint the edited content
         }
     }
 

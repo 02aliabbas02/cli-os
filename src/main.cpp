@@ -127,8 +127,7 @@ int main() {
                         cout << " - " << suggestion ;
                         
                     }
-                    cout << "\033[A";  
-                    clearLine();
+                    cout<<"\n";
                     cp.printCurrDir();
                     cout << "> " << command;
                     

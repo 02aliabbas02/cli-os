@@ -26,11 +26,19 @@ struct HuffmanNode {
     HuffmanNode(char ch, int freq) : character(ch), frequency(freq), left(nullptr), right(nullptr) {}
 };
 
+// struct Compare {
+//     bool operator()(HuffmanNode* l, HuffmanNode* r) {
+//         return l->frequency > r->frequency;
+//     }
+// };
 struct Compare {
     bool operator()(HuffmanNode* l, HuffmanNode* r) {
+        if (l->frequency == r->frequency)
+            return l->character > r->character;  // tiebreaker
         return l->frequency > r->frequency;
     }
 };
+
 
 HuffmanNode* buildHuffmanTree(const unordered_map<char, int>& freqTable) {
     priority_queue<HuffmanNode*, vector<HuffmanNode*>, Compare> minHeap;
@@ -116,9 +124,16 @@ string decodeData(const string& encodedData, HuffmanNode* root) {
 
 //     cout << "File decompressed successfully to " << decompressedFile.name << "\n";
 // }
+string escapeCharacter(char ch) {
+    if (ch == ';' || ch == ',' || ch == '|') {
+        return "\\" + string(1, ch);  // Escape special characters
+    }
+    return string(1, ch);
+}
 void FileSystem::zipCommand(file* fileName) {
     string data = fileName->content;
-    if(data.empty()){
+    if (data.empty()) {
+        cout << "Error: File is empty.\n";
         return;
     }
 
@@ -127,11 +142,10 @@ void FileSystem::zipCommand(file* fileName) {
     unordered_map<char, string> huffmanCodes;
     generateCodes(root, "", huffmanCodes);
     string encodedData = encodeData(data, huffmanCodes);
-    
+
     string freqTableData;
     for (const auto& pair : freqTable) {
-        freqTableData += string(1, pair.first) + "," + to_string(pair.second) + ";";
-
+        freqTableData += escapeCharacter(pair.first) + "," + to_string(pair.second) + ";";
     }
 
     file compressedFile(fileName->name + ".zip");
@@ -140,6 +154,12 @@ void FileSystem::zipCommand(file* fileName) {
     this->fileMap.insert(compressedFile.name, compressedFile);
 
     cout << "File compressed successfully to " << compressedFile.name << "\n";
+}
+string unescapeCharacter(const string& str) {
+    if (str[0] == '\\') {
+        return string(1, str[1]);  // Unescape special characters
+    }
+    return str;
 }
 void FileSystem::unzipCommand(file* compressedFile) {
     if (compressedFile->name.find(".zip") == string::npos) {
@@ -153,28 +173,29 @@ void FileSystem::unzipCommand(file* compressedFile) {
         cout << "Error: Invalid compressed file format.\n";
         return;
     }
-    
+
     string freqTableData = content.substr(0, delimiterPos);
     string encodedData = content.substr(delimiterPos + 1);
 
     unordered_map<char, int> freqTable;
     size_t pos = 0;
-   while ((pos = freqTableData.find(";")) != string::npos) {
-    string entry = freqTableData.substr(0, pos);
-    size_t commaPos = entry.find(",");
-    if (commaPos == string::npos) {
-        cout << "Error: Invalid frequency table format.\n";
-        return;
+    while ((pos = freqTableData.find(";")) != string::npos) {
+        string entry = freqTableData.substr(0, pos);
+        size_t commaPos = entry.find(",");
+        if (commaPos == string::npos) {
+            cout << "Error: Invalid frequency table format.\n";
+            return;
+        }
+        string characterStr = entry.substr(0, commaPos);
+        char character = unescapeCharacter(characterStr)[0];
+        int frequency = stoi(entry.substr(commaPos + 1));
+        freqTable[character] = frequency;
+        freqTableData.erase(0, pos + 1);
     }
-    char character = entry[0];  // or `entry[0]` depending on how it's stored
-    int frequency = stoi(entry.substr(commaPos + 1));
-    freqTable[character] = frequency;
-    freqTableData.erase(0, pos + 1);
-}
 
     HuffmanNode* root = buildHuffmanTree(freqTable);
     string decodedData = decodeData(encodedData, root);
-    
+
     file decompressedFile(compressedFile->name.substr(0, compressedFile->name.size() - 4) + "(2)");
     decompressedFile.content = decodedData;
     this->files.append(decompressedFile);
@@ -182,4 +203,3 @@ void FileSystem::unzipCommand(file* compressedFile) {
 
     cout << "File decompressed successfully to " << decompressedFile.name << "\n";
 }
-
